@@ -1,20 +1,21 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import { LOADERS, MC_VERSIONS, type CreatePackRequest } from "../types";
+import { LOADERS, MC_VERSIONS, type AppSettings, type CreatePackRequest } from "../types";
 
 interface CreatePackModalProps {
+  settings: AppSettings;
   onClose: () => void;
   onCreate: (req: CreatePackRequest) => Promise<void>;
 }
 
-export function CreatePackModal({ onClose, onCreate }: CreatePackModalProps) {
+export function CreatePackModal({ settings, onClose, onCreate }: CreatePackModalProps) {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<CreatePackRequest>({
     name: "",
     description: "",
-    minecraft_version: "1.20.1",
-    loader: "forge",
-    loader_version: "",
+    minecraft_version: settings.default_minecraft_version,
+    loader: settings.default_loader,
+    loader_version: settings.default_loader_version,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {

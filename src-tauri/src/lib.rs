@@ -3,6 +3,7 @@ mod file_ops;
 mod models;
 mod modrinth;
 mod pack_manager;
+mod settings;
 
 use models::*;
 use tauri_plugin_dialog::DialogExt;
@@ -158,6 +159,16 @@ async fn pick_and_import_archive(app: tauri::AppHandle) -> Result<PackMeta, Stri
 }
 
 #[tauri::command]
+fn get_settings() -> Result<AppSettings, String> {
+    settings::get_settings()
+}
+
+#[tauri::command]
+fn save_settings(settings: AppSettings) -> Result<(), String> {
+    settings::save_settings(&settings)
+}
+
+#[tauri::command]
 async fn export_pack_dialog(
     app: tauri::AppHandle,
     pack_id: String,
@@ -227,6 +238,8 @@ pub fn run() {
             download_modrinth_to_pack,
             pick_and_import_archive,
             export_pack_dialog,
+            get_settings,
+            save_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

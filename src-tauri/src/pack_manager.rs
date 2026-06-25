@@ -98,6 +98,7 @@ pub fn create_pack_from_import(
     minecraft_version: String,
     loader: String,
     loader_version: String,
+    version: Option<String>,
 ) -> Result<PackMeta, String> {
     let id = Uuid::new_v4().to_string();
     let dir = pack_dir(&id)?;
@@ -111,6 +112,10 @@ pub fn create_pack_from_import(
         minecraft_version,
         loader,
         loader_version,
+        version: version.unwrap_or_else(|| "1.0.0".to_string()),
+        author: String::new(),
+        export_include_icon: true,
+        export_include_metadata: false,
         created_at: now.clone(),
         updated_at: now,
         icon: None,
@@ -137,6 +142,10 @@ pub fn create_pack(req: CreatePackRequest) -> Result<PackMeta, String> {
         minecraft_version: req.minecraft_version,
         loader: req.loader.clone(),
         loader_version: req.loader_version,
+        version: "1.0.0".to_string(),
+        author: String::new(),
+        export_include_icon: true,
+        export_include_metadata: false,
         created_at: now.clone(),
         updated_at: now,
         icon: None,
@@ -160,6 +169,10 @@ pub fn update_pack(req: UpdatePackRequest) -> Result<PackMeta, String> {
     meta.minecraft_version = req.minecraft_version;
     meta.loader = req.loader;
     meta.loader_version = req.loader_version;
+    meta.version = req.version;
+    meta.author = req.author;
+    meta.export_include_icon = req.export_include_icon;
+    meta.export_include_metadata = req.export_include_metadata;
     meta.updated_at = Utc::now().to_rfc3339();
 
     write_meta(&dir, &meta)?;

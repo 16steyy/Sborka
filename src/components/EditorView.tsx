@@ -15,17 +15,28 @@ import {
   FileArchive,
 } from "lucide-react";
 import { api } from "../api/tauri";
-import type { FileNode, OpenTab, PackMeta } from "../types";
-import { FILE_TEMPLATES } from "../types";
+import type { AppSettings, FileNode, OpenTab, PackMeta } from "../types";
+import { FILE_TEMPLATES, LOADERS, MC_VERSIONS } from "../types";
 import { FileTree } from "./FileTree";
 import { CodeEditor } from "./CodeEditor";
 import { ModrinthContentBrowser } from "./ModrinthContentBrowser";
 
 interface EditorViewProps {
   pack: PackMeta;
+  settings: AppSettings;
   onBack: () => void;
   onToast: (msg: string, type: "success" | "error") => void;
   onPackUpdate: (pack: PackMeta) => void;
+}
+
+function normalizePack(pack: PackMeta): PackMeta {
+  return {
+    ...pack,
+    version: pack.version ?? "1.0.0",
+    author: pack.author ?? "",
+    export_include_icon: pack.export_include_icon ?? true,
+    export_include_metadata: pack.export_include_metadata ?? false,
+  };
 }
 
 interface ContextMenuState {
@@ -34,7 +45,7 @@ interface ContextMenuState {
   node: FileNode | null;
 }
 
-export function EditorView({ pack, onBack, onToast, onPackUpdate }: EditorViewProps) {
+export function EditorView({ pack, settings, onBack, onToast, onPackUpdate }: EditorViewProps) {
   const [files, setFiles] = useState<FileNode[]>([]);
   const [tabs, setTabs] = useState<OpenTab[]>([]);
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -46,7 +57,8 @@ export function EditorView({ pack, onBack, onToast, onPackUpdate }: EditorViewPr
   const [exporting, setExporting] = useState(false);
   const [showModrinth, setShowModrinth] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
-  const [packForm, setPackForm] = useState(pack);
+  const [packForm, setPackForm] = useState(() => normalizePack(pack));
+  const [settingsTab, setSettingsTab] = useState<"general" | "minecraft" | "export">("general");
 
   const loadFiles = useCallback(async () => {
     try {
@@ -60,7 +72,7 @@ export function EditorView({ pack, onBack, onToast, onPackUpdate }: EditorViewPr
   useEffect(() => {
     loadFiles();
     api.getPackIcon(pack.id).then(setIcon);
-    setPackForm(pack);
+    setPackForm(normalizePack(pack));
   }, [pack, loadFiles]);
 
   useEffect(() => {
@@ -115,7 +127,9 @@ export function EditorView({ pack, onBack, onToast, onPackUpdate }: EditorViewPr
 
   const closeTab = (path: string) => {
     const tab = tabs.find((t) => t.path === path);
-    if (tab?.dirty && !confirm("Файл не сохранён. Закрыть?")) return;
+    if (tab?.dirty) {
+      if (settings.confirm_unsaved_close && !confirm("Файл не сохранён. Закрыть?")) return;
+    }
     setTabs((prev) => prev.filter((t) => t.path !== path));
     if (activeTab === path) {
       const remaining = tabs.filter((t) => t.path !== path);
@@ -347,33 +361,149 @@ export function EditorView({ pack, onBack, onToast, onPackUpdate }: EditorViewPr
         {showSettings && (
           <div className="settings-panel">
             <h4>Настройки сборки</h4>
-            <div className="form-group">
-              <label className="label">Название</label>
-              <input
-                className="input"
-                style={{ padding: "6px 10px", fontSize: 12 }}
-                value={packForm.name}
-                onChange={(e) => setPackForm({ ...packForm, name: e.target.value })}
-              />
-            </div>
-            <div className="form-group">
-              <label className="label">Описание</label>
-              <textarea
-                className="textarea"
-                style={{ minHeight: 50, fontSize: 12, padding: "6px 10px" }}
-                value={packForm.description}
-                onChange={(e) => setPackForm({ ...packForm, description: e.target.value })}
-              />
-            </div>
-            <div className="icon-upload" style={{ marginBottom: 12 }}>
-              <div className="icon-preview">
-                {icon ? <img src={icon} alt="icon" /> : <ImagePlus size={20} color="var(--text-muted)" />}
-              </div>
-              <button className="btn btn-sm" onClick={handleUploadIcon}>
-                <ImagePlus size={14} />
-                Иконка
+
+            <div className="settings-tabs" style={{ marginBottom: 12 }}>
+              <button
+                type="button"
+                className={`settings-tab ${settingsTab === "general" ? "active" : ""}`}
+                onClick={() => setSettingsTab("general")}
+              >
+                Основное
+              </button>
+              <button
+                type="button"
+                className={`settings-tab ${settingsTab === "minecraft" ? "active" : ""}`}
+                onClick={() => setSettingsTab("minecraft")}
+              >
+                Minecraft
+              </button>
+              <button
+                type="button"
+                className={`settings-tab ${settingsTab === "export" ? "active" : ""}`}
+                onClick={() => setSettingsTab("export")}
+              >
+                Экспорт
               </button>
             </div>
+
+            {settingsTab === "general" && (
+              <>
+                <div className="form-group">
+                  <label className="label">Название</label>
+                  <input
+                    className="input"
+                    style={{ padding: "6px 10px", fontSize: 12 }}
+                    value={packForm.name}
+                    onChange={(e) => setPackForm({ ...packForm, name: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="label">Описание</label>
+                  <textarea
+                    className="textarea"
+                    style={{ minHeight: 50, fontSize: 12, padding: "6px 10px" }}
+                    value={packForm.description}
+                    onChange={(e) => setPackForm({ ...packForm, description: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="label">Автор</label>
+                  <input
+                    className="input"
+                    style={{ padding: "6px 10px", fontSize: 12 }}
+                    value={packForm.author}
+                    onChange={(e) => setPackForm({ ...packForm, author: e.target.value })}
+                    placeholder="Ваш ник"
+                  />
+                </div>
+                <div className="icon-upload" style={{ marginBottom: 12 }}>
+                  <div className="icon-preview">
+                    {icon ? <img src={icon} alt="icon" /> : <ImagePlus size={20} color="var(--text-muted)" />}
+                  </div>
+                  <button className="btn btn-sm" onClick={handleUploadIcon}>
+                    <ImagePlus size={14} />
+                    Иконка
+                  </button>
+                </div>
+              </>
+            )}
+
+            {settingsTab === "minecraft" && (
+              <>
+                <div className="form-group">
+                  <label className="label">Версия Minecraft</label>
+                  <select
+                    className="select"
+                    style={{ padding: "6px 10px", fontSize: 12 }}
+                    value={packForm.minecraft_version}
+                    onChange={(e) => setPackForm({ ...packForm, minecraft_version: e.target.value })}
+                  >
+                    {MC_VERSIONS.map((v) => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="label">Лоадер</label>
+                  <select
+                    className="select"
+                    style={{ padding: "6px 10px", fontSize: 12 }}
+                    value={packForm.loader}
+                    onChange={(e) => setPackForm({ ...packForm, loader: e.target.value })}
+                  >
+                    {LOADERS.map((l) => (
+                      <option key={l.id} value={l.id}>{l.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="label">Версия лоадера</label>
+                  <input
+                    className="input"
+                    style={{ padding: "6px 10px", fontSize: 12 }}
+                    value={packForm.loader_version}
+                    onChange={(e) => setPackForm({ ...packForm, loader_version: e.target.value })}
+                    placeholder="например 47.2.0"
+                  />
+                </div>
+              </>
+            )}
+
+            {settingsTab === "export" && (
+              <>
+                <div className="form-group">
+                  <label className="label">Версия сборки</label>
+                  <input
+                    className="input"
+                    style={{ padding: "6px 10px", fontSize: 12 }}
+                    value={packForm.version}
+                    onChange={(e) => setPackForm({ ...packForm, version: e.target.value })}
+                    placeholder="1.0.0"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="checkbox-label" style={{ fontSize: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={packForm.export_include_icon}
+                      onChange={(e) => setPackForm({ ...packForm, export_include_icon: e.target.checked })}
+                    />
+                    Включать иконку в экспорт
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label className="checkbox-label" style={{ fontSize: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={packForm.export_include_metadata}
+                      onChange={(e) => setPackForm({ ...packForm, export_include_metadata: e.target.checked })}
+                    />
+                    Включать sborka.json в .zip
+                  </label>
+                </div>
+              </>
+            )}
+
             <button className="btn btn-primary btn-sm" onClick={handleSavePackSettings}>
               Сохранить
             </button>
@@ -412,6 +542,7 @@ export function EditorView({ pack, onBack, onToast, onPackUpdate }: EditorViewPr
               path={currentTab.path}
               language={currentTab.language}
               content={currentTab.content}
+              settings={settings}
               onChange={(v) => updateTabContent(currentTab.path, v)}
             />
           ) : (

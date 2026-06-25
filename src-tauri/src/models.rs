@@ -1,6 +1,14 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+fn default_version() -> String {
+    "1.0.0".to_string()
+}
+
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackMeta {
     pub id: String,
@@ -9,9 +17,48 @@ pub struct PackMeta {
     pub minecraft_version: String,
     pub loader: String,
     pub loader_version: String,
+    #[serde(default = "default_version")]
+    pub version: String,
+    #[serde(default)]
+    pub author: String,
+    #[serde(default = "default_true")]
+    pub export_include_icon: bool,
+    #[serde(default)]
+    pub export_include_metadata: bool,
     pub created_at: String,
     pub updated_at: String,
     pub icon: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppSettings {
+    pub editor_theme: String,
+    pub editor_font_size: u32,
+    pub editor_minimap: bool,
+    pub editor_word_wrap: bool,
+    pub editor_tab_size: u32,
+    pub default_minecraft_version: String,
+    pub default_loader: String,
+    pub default_loader_version: String,
+    pub confirm_unsaved_close: bool,
+    pub default_export_format: String,
+}
+
+impl Default for AppSettings {
+    fn default() -> Self {
+        Self {
+            editor_theme: "vs-dark".to_string(),
+            editor_font_size: 14,
+            editor_minimap: false,
+            editor_word_wrap: true,
+            editor_tab_size: 2,
+            default_minecraft_version: "1.20.1".to_string(),
+            default_loader: "forge".to_string(),
+            default_loader_version: String::new(),
+            confirm_unsaved_close: true,
+            default_export_format: "mrpack".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -31,6 +78,10 @@ pub struct UpdatePackRequest {
     pub minecraft_version: String,
     pub loader: String,
     pub loader_version: String,
+    pub version: String,
+    pub author: String,
+    pub export_include_icon: bool,
+    pub export_include_metadata: bool,
 }
 
 #[derive(Debug, Serialize)]

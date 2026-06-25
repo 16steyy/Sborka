@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  AppSettings,
   CreatePackRequest,
   FileContent,
   FileNode,
@@ -24,6 +25,10 @@ export const api = {
         minecraft_version: req.minecraft_version,
         loader: req.loader,
         loader_version: req.loader_version,
+        version: req.version,
+        author: req.author,
+        export_include_icon: req.export_include_icon,
+        export_include_metadata: req.export_include_metadata,
       },
     }),
   deletePack: (id: string) => invoke<void>("delete_pack", { id }),
@@ -77,4 +82,7 @@ export const api = {
   pickAndImportArchive: () => invoke<PackMeta>("pick_and_import_archive"),
   exportPack: (packId: string, format: "mrpack" | "zip") =>
     invoke<string>("export_pack_dialog", { packId, format }),
+  getSettings: () => invoke<AppSettings>("get_settings"),
+  saveSettings: (settings: AppSettings) =>
+    invoke<void>("save_settings", { settings }),
 };

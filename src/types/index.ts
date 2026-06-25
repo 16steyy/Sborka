@@ -5,10 +5,40 @@ export interface PackMeta {
   minecraft_version: string;
   loader: string;
   loader_version: string;
+  version: string;
+  author: string;
+  export_include_icon: boolean;
+  export_include_metadata: boolean;
   created_at: string;
   updated_at: string;
   icon: string | null;
 }
+
+export interface AppSettings {
+  editor_theme: string;
+  editor_font_size: number;
+  editor_minimap: boolean;
+  editor_word_wrap: boolean;
+  editor_tab_size: number;
+  default_minecraft_version: string;
+  default_loader: string;
+  default_loader_version: string;
+  confirm_unsaved_close: boolean;
+  default_export_format: string;
+}
+
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+  editor_theme: "vs-dark",
+  editor_font_size: 14,
+  editor_minimap: false,
+  editor_word_wrap: true,
+  editor_tab_size: 2,
+  default_minecraft_version: "1.20.1",
+  default_loader: "forge",
+  default_loader_version: "",
+  confirm_unsaved_close: true,
+  default_export_format: "mrpack",
+};
 
 export interface CreatePackRequest {
   name: string;

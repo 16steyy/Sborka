@@ -10,16 +10,17 @@ import {
   Globe,
 } from "lucide-react";
 import { api } from "../api/tauri";
-import type { PackMeta } from "../types";
+import type { AppSettings, PackMeta } from "../types";
 import { CreatePackModal } from "./CreatePackModal";
 import { ModrinthBrowser } from "./ModrinthBrowser";
 
 interface PackListProps {
+  settings: AppSettings;
   onOpenPack: (pack: PackMeta) => void;
   onToast: (msg: string, type: "success" | "error") => void;
 }
 
-export function PackList({ onOpenPack, onToast }: PackListProps) {
+export function PackList({ settings, onOpenPack, onToast }: PackListProps) {
   const [packs, setPacks] = useState<PackMeta[]>([]);
   const [icons, setIcons] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
@@ -213,6 +214,7 @@ export function PackList({ onOpenPack, onToast }: PackListProps) {
 
       {showCreate && (
         <CreatePackModal
+          settings={settings}
           onClose={() => setShowCreate(false)}
           onCreate={handleCreate}
         />

@@ -9,7 +9,6 @@ use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipWriter};
 
 const INDEX_FILE: &str = "modrinth.index.json";
-const SKIP_EXPORT: &[&str] = &["sborka.json"];
 const OVERRIDE_PREFIXES: &[&str] = &["overrides/", "client-overrides/", "server-overrides/"];
 
 fn is_safe_relative_path(path: &str) -> bool {
@@ -69,8 +68,14 @@ fn build_dependencies(meta: &PackMeta) -> HashMap<String, String> {
     deps
 }
 
-fn should_skip_export(name: &str) -> bool {
-    SKIP_EXPORT.contains(&name) || name.starts_with("icon.")
+fn should_skip_export(name: &str, meta: &PackMeta) -> bool {
+    if name == "sborka.json" {
+        return !meta.export_include_metadata;
+    }
+    if name.starts_with("icon.") {
+        return !meta.export_include_icon;
+    }
+    false
 }
 
 pub async fn import_from_path(source_path: &str) -> Result<PackMeta, String> {
@@ -117,6 +122,7 @@ async fn import_mrpack<R: Read + Seek>(archive: &mut ZipArchive<R>) -> Result<Pa
         mc_version,
         loader,
         loader_version,
+        Some(index.version_id.clone()),
     )?;
     let root = pack_root(&meta.id)?;
 
@@ -180,6 +186,7 @@ fn import_plain_zip<R: Read + Seek>(
         "1.20.1".to_string(),
         "forge".to_string(),
         String::new(),
+        None,
     )?;
     let root = pack_root(&meta.id)?;
 
@@ -215,7 +222,7 @@ fn import_plain_zip<R: Read + Seek>(
     Ok(meta)
 }
 
-fn collect_pack_files(root: &Path, base: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
+fn collect_pack_files(root: &Path, base: &Path, meta: &PackMeta, files: &mut Vec<PathBuf>) -> Result<(), String> {
     for entry in fs::read_dir(base).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;
         let path = entry.path();
@@ -226,8 +233,8 @@ fn collect_pack_files(root: &Path, base: &Path, files: &mut Vec<PathBuf>) -> Res
             .replace('\\', "/");
 
         if path.is_dir() {
-            collect_pack_files(root, &path, files)?;
-        } else if !should_skip_export(&rel) {
+            collect_pack_files(root, &path, meta, files)?;
+        } else if !should_skip_export(&rel, meta) {
             files.push(path);
         }
     }
@@ -244,14 +251,14 @@ pub fn export_pack(pack_id: &str, format: ExportFormat, dest_path: &str) -> Resu
         .compression_method(CompressionMethod::Deflated);
 
     let mut pack_files = Vec::new();
-    collect_pack_files(&root, &root, &mut pack_files)?;
+    collect_pack_files(&root, &root, &meta, &mut pack_files)?;
 
     match format {
         ExportFormat::Mrpack => {
             let index = MrPackIndex {
                 format_version: 1,
                 game: "minecraft".to_string(),
-                version_id: "1.0.0".to_string(),
+                version_id: meta.version.clone(),
                 name: meta.name.clone(),
                 summary: if meta.description.is_empty() {
                     None
