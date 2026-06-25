@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import type { AppSettings } from "../types";
+import type { AppSettings, ModrinthContentType } from "../types";
 import { DEFAULT_APP_SETTINGS, LOADERS, MC_VERSIONS } from "../types";
 
 interface SettingsModalProps {
@@ -9,11 +9,23 @@ interface SettingsModalProps {
   onSave: (settings: AppSettings) => Promise<void>;
 }
 
-type Tab = "editor" | "defaults" | "behavior";
+type Tab = "editor" | "defaults" | "structure" | "behavior";
+
+const SCAFFOLD_OPTIONS: { key: keyof AppSettings; label: string }[] = [
+  { key: "scaffold_mods_folder", label: "Папка mods/" },
+  { key: "scaffold_config_folders", label: "Папки config/ и defaultconfigs/" },
+  { key: "scaffold_kubejs", label: "Папки KubeJS (server/startup/client scripts)" },
+  { key: "scaffold_scripts", label: "Папка scripts/ (CraftTweaker и др.)" },
+  { key: "scaffold_resourcepacks", label: "Папка resourcepacks/" },
+  { key: "scaffold_shaderpacks", label: "Папка shaderpacks/" },
+  { key: "scaffold_readme", label: "Файл README.md" },
+  { key: "scaffold_modpack_toml", label: "Файл modpack.toml" },
+  { key: "scaffold_pack_mcmeta", label: "Файл pack.mcmeta" },
+];
 
 export function SettingsModal({ settings, onClose, onSave }: SettingsModalProps) {
   const [form, setForm] = useState<AppSettings>({ ...settings });
-  const [tab, setTab] = useState<Tab>("editor");
+  const [tab, setTab] = useState<Tab>("defaults");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,17 +56,24 @@ export function SettingsModal({ settings, onClose, onSave }: SettingsModalProps)
         <div className="settings-tabs">
           <button
             type="button"
+            className={`settings-tab ${tab === "defaults" ? "active" : ""}`}
+            onClick={() => setTab("defaults")}
+          >
+            Сборки
+          </button>
+          <button
+            type="button"
+            className={`settings-tab ${tab === "structure" ? "active" : ""}`}
+            onClick={() => setTab("structure")}
+          >
+            Структура
+          </button>
+          <button
+            type="button"
             className={`settings-tab ${tab === "editor" ? "active" : ""}`}
             onClick={() => setTab("editor")}
           >
             Редактор
-          </button>
-          <button
-            type="button"
-            className={`settings-tab ${tab === "defaults" ? "active" : ""}`}
-            onClick={() => setTab("defaults")}
-          >
-            По умолчанию
           </button>
           <button
             type="button"
@@ -110,6 +129,17 @@ export function SettingsModal({ settings, onClose, onSave }: SettingsModalProps)
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
+                    checked={form.editor_line_numbers}
+                    onChange={(e) => update("editor_line_numbers", e.target.checked)}
+                  />
+                  Показывать номера строк
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
                     checked={form.editor_minimap}
                     onChange={(e) => update("editor_minimap", e.target.checked)}
                   />
@@ -132,7 +162,7 @@ export function SettingsModal({ settings, onClose, onSave }: SettingsModalProps)
 
           {tab === "defaults" && (
             <>
-              <p className="settings-hint">Значения для новых сборок</p>
+              <p className="settings-hint">Значения по умолчанию для новых сборок</p>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div className="form-group">
@@ -172,6 +202,27 @@ export function SettingsModal({ settings, onClose, onSave }: SettingsModalProps)
                 />
               </div>
 
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="form-group">
+                  <label className="label">Автор</label>
+                  <input
+                    className="input"
+                    value={form.default_author}
+                    onChange={(e) => update("default_author", e.target.value)}
+                    placeholder="Ваш ник"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="label">Версия сборки</label>
+                  <input
+                    className="input"
+                    value={form.default_pack_version}
+                    onChange={(e) => update("default_pack_version", e.target.value)}
+                    placeholder="1.0.0"
+                  />
+                </div>
+              </div>
+
               <div className="form-group">
                 <label className="label">Формат экспорта по умолчанию</label>
                 <select
@@ -183,6 +234,49 @@ export function SettingsModal({ settings, onClose, onSave }: SettingsModalProps)
                   <option value="zip">.zip</option>
                 </select>
               </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={form.default_export_include_icon}
+                    onChange={(e) => update("default_export_include_icon", e.target.checked)}
+                  />
+                  Включать иконку в экспорт
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={form.default_export_include_metadata}
+                    onChange={(e) => update("default_export_include_metadata", e.target.checked)}
+                  />
+                  Включать sborka.json в .zip
+                </label>
+              </div>
+            </>
+          )}
+
+          {tab === "structure" && (
+            <>
+              <p className="settings-hint">
+                Что создавать автоматически при создании новой сборки
+              </p>
+
+              {SCAFFOLD_OPTIONS.map(({ key, label }) => (
+                <div className="form-group" key={key}>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={form[key] as boolean}
+                      onChange={(e) => update(key, e.target.checked as AppSettings[typeof key])}
+                    />
+                    {label}
+                  </label>
+                </div>
+              ))}
             </>
           )}
 
@@ -197,6 +291,32 @@ export function SettingsModal({ settings, onClose, onSave }: SettingsModalProps)
                   />
                   Подтверждать закрытие несохранённых файлов
                 </label>
+              </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={form.confirm_delete}
+                    onChange={(e) => update("confirm_delete", e.target.checked)}
+                  />
+                  Подтверждать удаление файлов и сборок
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label className="label">Вкладка Modrinth по умолчанию</label>
+                <select
+                  className="select"
+                  value={form.default_modrinth_content_type}
+                  onChange={(e) =>
+                    update("default_modrinth_content_type", e.target.value as ModrinthContentType)
+                  }
+                >
+                  <option value="mod">Моды</option>
+                  <option value="shader">Шейдеры</option>
+                  <option value="resourcepack">Ресурспаки</option>
+                </select>
               </div>
 
               <button

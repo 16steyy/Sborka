@@ -20,11 +20,27 @@ export interface AppSettings {
   editor_minimap: boolean;
   editor_word_wrap: boolean;
   editor_tab_size: number;
+  editor_line_numbers: boolean;
   default_minecraft_version: string;
   default_loader: string;
   default_loader_version: string;
+  default_author: string;
+  default_pack_version: string;
+  default_export_include_icon: boolean;
+  default_export_include_metadata: boolean;
   confirm_unsaved_close: boolean;
+  confirm_delete: boolean;
   default_export_format: string;
+  scaffold_mods_folder: boolean;
+  scaffold_config_folders: boolean;
+  scaffold_kubejs: boolean;
+  scaffold_scripts: boolean;
+  scaffold_resourcepacks: boolean;
+  scaffold_shaderpacks: boolean;
+  scaffold_readme: boolean;
+  scaffold_modpack_toml: boolean;
+  scaffold_pack_mcmeta: boolean;
+  default_modrinth_content_type: ModrinthContentType;
 }
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -33,11 +49,27 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   editor_minimap: false,
   editor_word_wrap: true,
   editor_tab_size: 2,
+  editor_line_numbers: true,
   default_minecraft_version: "1.20.1",
   default_loader: "forge",
   default_loader_version: "",
+  default_author: "",
+  default_pack_version: "1.0.0",
+  default_export_include_icon: true,
+  default_export_include_metadata: false,
   confirm_unsaved_close: true,
+  confirm_delete: true,
   default_export_format: "mrpack",
+  scaffold_mods_folder: true,
+  scaffold_config_folders: true,
+  scaffold_kubejs: true,
+  scaffold_scripts: true,
+  scaffold_resourcepacks: true,
+  scaffold_shaderpacks: true,
+  scaffold_readme: true,
+  scaffold_modpack_toml: true,
+  scaffold_pack_mcmeta: true,
+  default_modrinth_content_type: "mod",
 };
 
 export interface CreatePackRequest {
@@ -46,6 +78,8 @@ export interface CreatePackRequest {
   minecraft_version: string;
   loader: string;
   loader_version: string;
+  author: string;
+  version: string;
 }
 
 export interface FileNode {

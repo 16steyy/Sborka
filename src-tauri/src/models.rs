@@ -31,17 +31,54 @@ pub struct PackMeta {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct AppSettings {
     pub editor_theme: String,
     pub editor_font_size: u32,
     pub editor_minimap: bool,
     pub editor_word_wrap: bool,
     pub editor_tab_size: u32,
+    #[serde(default = "default_true")]
+    pub editor_line_numbers: bool,
     pub default_minecraft_version: String,
     pub default_loader: String,
     pub default_loader_version: String,
+    #[serde(default)]
+    pub default_author: String,
+    #[serde(default = "default_version")]
+    pub default_pack_version: String,
+    #[serde(default = "default_true")]
+    pub default_export_include_icon: bool,
+    #[serde(default)]
+    pub default_export_include_metadata: bool,
     pub confirm_unsaved_close: bool,
+    #[serde(default = "default_true")]
+    pub confirm_delete: bool,
     pub default_export_format: String,
+    #[serde(default = "default_true")]
+    pub scaffold_mods_folder: bool,
+    #[serde(default = "default_true")]
+    pub scaffold_config_folders: bool,
+    #[serde(default = "default_true")]
+    pub scaffold_kubejs: bool,
+    #[serde(default = "default_true")]
+    pub scaffold_scripts: bool,
+    #[serde(default = "default_true")]
+    pub scaffold_resourcepacks: bool,
+    #[serde(default = "default_true")]
+    pub scaffold_shaderpacks: bool,
+    #[serde(default = "default_true")]
+    pub scaffold_readme: bool,
+    #[serde(default = "default_true")]
+    pub scaffold_modpack_toml: bool,
+    #[serde(default = "default_true")]
+    pub scaffold_pack_mcmeta: bool,
+    #[serde(default = "default_modrinth_content")]
+    pub default_modrinth_content_type: String,
+}
+
+fn default_modrinth_content() -> String {
+    "mod".to_string()
 }
 
 impl Default for AppSettings {
@@ -52,11 +89,27 @@ impl Default for AppSettings {
             editor_minimap: false,
             editor_word_wrap: true,
             editor_tab_size: 2,
+            editor_line_numbers: true,
             default_minecraft_version: "1.20.1".to_string(),
             default_loader: "forge".to_string(),
             default_loader_version: String::new(),
+            default_author: String::new(),
+            default_pack_version: "1.0.0".to_string(),
+            default_export_include_icon: true,
+            default_export_include_metadata: false,
             confirm_unsaved_close: true,
+            confirm_delete: true,
             default_export_format: "mrpack".to_string(),
+            scaffold_mods_folder: true,
+            scaffold_config_folders: true,
+            scaffold_kubejs: true,
+            scaffold_scripts: true,
+            scaffold_resourcepacks: true,
+            scaffold_shaderpacks: true,
+            scaffold_readme: true,
+            scaffold_modpack_toml: true,
+            scaffold_pack_mcmeta: true,
+            default_modrinth_content_type: "mod".to_string(),
         }
     }
 }
@@ -68,6 +121,10 @@ pub struct CreatePackRequest {
     pub minecraft_version: String,
     pub loader: String,
     pub loader_version: String,
+    #[serde(default)]
+    pub author: String,
+    #[serde(default = "default_version")]
+    pub version: String,
 }
 
 #[derive(Debug, Deserialize)]

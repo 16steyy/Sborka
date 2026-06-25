@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Download, Search, X, ChevronLeft, Loader2 } from "lucide-react";
 import { api } from "../api/tauri";
-import type { ModrinthContentType, ModrinthSearchHit, ModrinthVersion, PackMeta } from "../types";
+import type { AppSettings, ModrinthContentType, ModrinthSearchHit, ModrinthVersion, PackMeta } from "../types";
 
 const CONTENT_TABS: { type: ModrinthContentType; label: string; placeholder: string; defaultQuery: string }[] = [
   { type: "mod", label: "Моды", placeholder: "Поиск модов...", defaultQuery: "mod" },
@@ -11,6 +11,7 @@ const CONTENT_TABS: { type: ModrinthContentType; label: string; placeholder: str
 
 interface ModrinthContentBrowserProps {
   pack: PackMeta;
+  settings: AppSettings;
   onClose: () => void;
   onDownloaded: () => void;
   onToast: (msg: string, type: "success" | "error") => void;
@@ -18,11 +19,14 @@ interface ModrinthContentBrowserProps {
 
 export function ModrinthContentBrowser({
   pack,
+  settings,
   onClose,
   onDownloaded,
   onToast,
 }: ModrinthContentBrowserProps) {
-  const [contentType, setContentType] = useState<ModrinthContentType>("mod");
+  const [contentType, setContentType] = useState<ModrinthContentType>(
+    settings.default_modrinth_content_type
+  );
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<ModrinthSearchHit[]>([]);
   const [loading, setLoading] = useState(false);

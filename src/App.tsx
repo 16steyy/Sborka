@@ -17,7 +17,7 @@ function App() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
-    api.getSettings().then(setSettings).catch(() => {});
+    api.getSettings().then((s) => setSettings({ ...DEFAULT_APP_SETTINGS, ...s })).catch(() => {});
   }, []);
 
   const showToast = useCallback((message: string, type: "success" | "error") => {

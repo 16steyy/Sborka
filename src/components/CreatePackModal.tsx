@@ -16,6 +16,8 @@ export function CreatePackModal({ settings, onClose, onCreate }: CreatePackModal
     minecraft_version: settings.default_minecraft_version,
     loader: settings.default_loader,
     loader_version: settings.default_loader_version,
+    author: settings.default_author,
+    version: settings.default_pack_version,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,6 +100,27 @@ export function CreatePackModal({ settings, onClose, onCreate }: CreatePackModal
               onChange={(e) => setForm({ ...form, loader_version: e.target.value })}
               placeholder="например 47.2.0"
             />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="form-group">
+              <label className="label">Автор</label>
+              <input
+                className="input"
+                value={form.author}
+                onChange={(e) => setForm({ ...form, author: e.target.value })}
+                placeholder="Ваш ник"
+              />
+            </div>
+            <div className="form-group">
+              <label className="label">Версия сборки</label>
+              <input
+                className="input"
+                value={form.version}
+                onChange={(e) => setForm({ ...form, version: e.target.value })}
+                placeholder="1.0.0"
+              />
+            </div>
           </div>
 
           <div className="modal-actions">

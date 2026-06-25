@@ -25,6 +25,7 @@ export function CodeEditor({ path, language, content, settings, onChange }: Code
         scrollBeyondLastLine: false,
         wordWrap: settings.editor_word_wrap ? "on" : "off",
         tabSize: settings.editor_tab_size,
+        lineNumbers: settings.editor_line_numbers ? "on" : "off",
         automaticLayout: true,
       }}
     />

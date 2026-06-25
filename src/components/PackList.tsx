@@ -59,7 +59,7 @@ export function PackList({ settings, onOpenPack, onToast }: PackListProps) {
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (!confirm("Удалить сборку? Это действие необратимо.")) return;
+    if (settings.confirm_delete && !confirm("Удалить сборку? Это действие необратимо.")) return;
     try {
       await api.deletePack(id);
       onToast("Сборка удалена", "success");

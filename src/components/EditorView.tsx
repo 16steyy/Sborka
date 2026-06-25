@@ -183,7 +183,7 @@ export function EditorView({ pack, settings, onBack, onToast, onPackUpdate }: Ed
   };
 
   const handleDelete = async (node: FileNode) => {
-    if (!confirm(`Удалить "${node.name}"?`)) return;
+    if (settings.confirm_delete && !confirm(`Удалить "${node.name}"?`)) return;
     try {
       await api.deletePath(pack.id, node.path);
       setTabs((prev) => prev.filter((t) => !t.path.startsWith(node.path)));
@@ -305,17 +305,19 @@ export function EditorView({ pack, settings, onBack, onToast, onPackUpdate }: Ed
           </button>
           <button
             className="btn btn-sm"
-            onClick={() => handleExport("mrpack")}
+            onClick={() => handleExport(settings.default_export_format as "mrpack" | "zip")}
             disabled={exporting}
-            title="Экспорт .mrpack"
+            title={`Экспорт .${settings.default_export_format}`}
           >
             <Download size={14} />
           </button>
           <button
             className="btn btn-sm"
-            onClick={() => handleExport("zip")}
+            onClick={() =>
+              handleExport(settings.default_export_format === "mrpack" ? "zip" : "mrpack")
+            }
             disabled={exporting}
-            title="Экспорт .zip"
+            title={`Экспорт .${settings.default_export_format === "mrpack" ? "zip" : "mrpack"}`}
           >
             <FileArchive size={14} />
           </button>
@@ -605,6 +607,7 @@ export function EditorView({ pack, settings, onBack, onToast, onPackUpdate }: Ed
       {showModrinth && (
         <ModrinthContentBrowser
           pack={pack}
+          settings={settings}
           onClose={() => setShowModrinth(false)}
           onDownloaded={loadFiles}
           onToast={onToast}

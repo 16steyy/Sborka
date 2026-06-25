@@ -1,4 +1,5 @@
-use crate::models::{CreatePackRequest, PackMeta, UpdatePackRequest};
+use crate::models::{AppSettings, CreatePackRequest, PackMeta, UpdatePackRequest};
+use crate::settings;
 use chrono::Utc;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -32,44 +33,80 @@ fn write_meta(dir: &Path, meta: &PackMeta) -> Result<(), String> {
     fs::write(path, content).map_err(|e| e.to_string())
 }
 
-fn scaffold_pack(dir: &Path, _loader: &str) -> Result<(), String> {
-    let dirs = [
-        "mods",
-        "config",
-        "defaultconfigs",
-        "kubejs/server_scripts",
-        "kubejs/startup_scripts",
-        "kubejs/client_scripts",
-        "scripts",
-        "resourcepacks",
-        "shaderpacks",
-    ];
-    for d in dirs {
-        fs::create_dir_all(dir.join(d)).map_err(|e| e.to_string())?;
+fn scaffold_pack(dir: &Path, loader: &str, opts: &AppSettings) -> Result<(), String> {
+    if opts.scaffold_mods_folder {
+        fs::create_dir_all(dir.join("mods")).map_err(|e| e.to_string())?;
     }
 
-    fs::write(dir.join("README.md"), "# modpack\n").map_err(|e| e.to_string())?;
+    if opts.scaffold_config_folders {
+        for d in ["config", "defaultconfigs"] {
+            fs::create_dir_all(dir.join(d)).map_err(|e| e.to_string())?;
+        }
+    }
 
-    fs::write(
-        dir.join("modpack.toml"),
-        r#"name = "modpack"
+    if opts.scaffold_kubejs {
+        for d in [
+            "kubejs/server_scripts",
+            "kubejs/startup_scripts",
+            "kubejs/client_scripts",
+        ] {
+            fs::create_dir_all(dir.join(d)).map_err(|e| e.to_string())?;
+        }
+    }
+
+    if opts.scaffold_scripts {
+        fs::create_dir_all(dir.join("scripts")).map_err(|e| e.to_string())?;
+    }
+
+    if opts.scaffold_resourcepacks {
+        fs::create_dir_all(dir.join("resourcepacks")).map_err(|e| e.to_string())?;
+    }
+
+    if opts.scaffold_shaderpacks {
+        fs::create_dir_all(dir.join("shaderpacks")).map_err(|e| e.to_string())?;
+    }
+
+    if opts.scaffold_readme {
+        fs::write(dir.join("README.md"), "# modpack\n").map_err(|e| e.to_string())?;
+    }
+
+    if opts.scaffold_modpack_toml {
+        let loader_name = match loader {
+            "fabric" | "quilt" => "fabric",
+            "neoforge" => "neoforge",
+            _ => "forge",
+        };
+        fs::write(
+            dir.join("modpack.toml"),
+            format!(
+                r#"name = "modpack"
 version = "1.0.0"
-[mods]
-"#,
-    )
-    .map_err(|e| e.to_string())?;
 
-    fs::write(
-        dir.join("pack.mcmeta"),
-        r#"{
+[mods]
+# Добавьте моды в папку mods/
+
+[{}]
+version = ""
+"#,
+                loader_name
+            ),
+        )
+        .map_err(|e| e.to_string())?;
+    }
+
+    if opts.scaffold_pack_mcmeta {
+        fs::write(
+            dir.join("pack.mcmeta"),
+            r#"{
   "pack": {
     "pack_format": 15,
     "description": ""
   }
 }
 "#,
-    )
-    .map_err(|e| e.to_string())?;
+        )
+        .map_err(|e| e.to_string())?;
+    }
 
     Ok(())
 }
@@ -130,9 +167,23 @@ pub fn read_meta_internal(path: &Path) -> Result<PackMeta, String> {
 }
 
 pub fn create_pack(req: CreatePackRequest) -> Result<PackMeta, String> {
+    let app_settings = settings::get_settings().unwrap_or_default();
+
     let id = Uuid::new_v4().to_string();
     let dir = pack_dir(&id)?;
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+
+    let author = if req.author.is_empty() {
+        app_settings.default_author.clone()
+    } else {
+        req.author
+    };
+
+    let version = if req.version.is_empty() {
+        app_settings.default_pack_version.clone()
+    } else {
+        req.version
+    };
 
     let now = Utc::now().to_rfc3339();
     let meta = PackMeta {
@@ -142,16 +193,16 @@ pub fn create_pack(req: CreatePackRequest) -> Result<PackMeta, String> {
         minecraft_version: req.minecraft_version,
         loader: req.loader.clone(),
         loader_version: req.loader_version,
-        version: "1.0.0".to_string(),
-        author: String::new(),
-        export_include_icon: true,
-        export_include_metadata: false,
+        version,
+        author,
+        export_include_icon: app_settings.default_export_include_icon,
+        export_include_metadata: app_settings.default_export_include_metadata,
         created_at: now.clone(),
         updated_at: now,
         icon: None,
     };
 
-    scaffold_pack(&dir, &req.loader)?;
+    scaffold_pack(&dir, &req.loader, &app_settings)?;
     write_meta(&dir, &meta)?;
     Ok(meta)
 }
